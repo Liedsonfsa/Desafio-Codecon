@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"sort"
 
 	"github.com/Liedsonfsa/Desafio-Codecon/internal/models"
 )
@@ -59,4 +60,43 @@ func GetSuperUsers(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&superusers)
+}
+
+func GetTopCountries(w http.ResponseWriter, r *http.Request) {
+	var users []models.Users
+
+	file, err := os.Open("users.json")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	err = json.NewDecoder(file).Decode(&users)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	topCountries := map[string]int{}
+	// var superusers []models.Users
+	for _, user := range users {
+		if user.Score >= 900 && user.Active {
+			topCountries[user.Country]++
+		}
+	}
+
+	values := make([]int, 0, len(topCountries))
+	for _, value := range topCountries {
+		values = append(values, value)
+	}
+
+	sort.Sort(sort.Reverse(sort.IntSlice(values)))
+
+	// var response map[string]int
+	
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&values)
 }
