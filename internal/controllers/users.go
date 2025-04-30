@@ -100,3 +100,59 @@ func GetTopCountries(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&values)
 }
+
+func GetTeamInsights(w http.ResponseWriter, r *http.Request) {
+	var users []models.Users
+
+	file, err := os.Open("users.json")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	err = json.NewDecoder(file).Decode(&users)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// var teams map[string]models.TeamInsights
+	leaders := map[string]string{}
+	times := map[string]int{}
+	activeUsers := map[string]int{}
+	// percentActiveUsers := map[string]float64{}
+	for _, user := range users {
+		times[user.Team.Name]++
+		if user.Active {
+			activeUsers[user.Team.Name]++
+		}
+
+		if user.Team.Leader {
+			leaders[user.Team.Name] = user.Name
+		}
+
+		// teams[user.Team.Name].ActiveMembers++
+	}
+
+	type data struct {
+		Members 		int 		`json:"members"`
+		ActiveMembers	int 		`json:"active_members"`
+		Leader			string		`json:"leader"`
+		PercentActiveUsers	float64 `json:"percent_active_users"`
+	}
+
+	response := map[string]data{}
+	for team, membros := range times {
+		response[team] = data{
+			Members: membros,
+			ActiveMembers: activeUsers[team],
+			Leader: leaders[team],
+			PercentActiveUsers: ((float64(activeUsers[team])) / (float64(times[team]) / 100)),
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&response)
+}
