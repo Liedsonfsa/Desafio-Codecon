@@ -117,11 +117,11 @@ func GetTeamInsights(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// var teams map[string]models.TeamInsights
 	leaders := map[string]string{}
 	times := map[string]int{}
 	activeUsers := map[string]int{}
-	// percentActiveUsers := map[string]float64{}
+	completedprojects := map[string][]string{}
+	
 	for _, user := range users {
 		times[user.Team.Name]++
 		if user.Active {
@@ -132,7 +132,14 @@ func GetTeamInsights(w http.ResponseWriter, r *http.Request) {
 			leaders[user.Team.Name] = user.Name
 		}
 
-		// teams[user.Team.Name].ActiveMembers++
+		projects := []string{}
+
+		for _, project := range user.Team.Projects {
+			if project.Completed {
+				projects = append(projects, project.Name)
+			}
+		}
+		completedprojects[user.Team.Name] = projects
 	}
 
 	type data struct {
@@ -140,6 +147,7 @@ func GetTeamInsights(w http.ResponseWriter, r *http.Request) {
 		ActiveMembers	int 		`json:"active_members"`
 		Leader			string		`json:"leader"`
 		PercentActiveUsers	float64 `json:"percent_active_users"`
+		CompletedProjects	[]string	`json:"completed_projects"`
 	}
 
 	response := map[string]data{}
@@ -149,10 +157,42 @@ func GetTeamInsights(w http.ResponseWriter, r *http.Request) {
 			ActiveMembers: activeUsers[team],
 			Leader: leaders[team],
 			PercentActiveUsers: ((float64(activeUsers[team])) / (float64(times[team]) / 100)),
+			CompletedProjects: completedprojects[team],
 		}
 	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&response)
+}
+
+func GetLogins(w http.ResponseWriter, r *http.Request){
+	var users []models.Users
+
+	file, err := os.Open("users.json")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	err = json.NewDecoder(file).Decode(&users)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	logins := map[string]int{}
+
+	for _, user := range users {
+		for _, log := range user.Logs {
+			if log.Action == "login" {
+				logins[log.Date]++
+			}
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&logins)
 }
