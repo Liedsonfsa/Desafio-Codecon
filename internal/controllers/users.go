@@ -11,6 +11,7 @@ import (
 
 func SaveUsers(w http.ResponseWriter, r *http.Request) {
 	var users []models.Users
+
 	if err := json.NewDecoder(r.Body).Decode(&users); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -79,26 +80,37 @@ func GetTopCountries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	topCountries := map[string]int{}
-	// var superusers []models.Users
+	
 	for _, user := range users {
 		if user.Score >= 900 && user.Active {
 			topCountries[user.Country]++
 		}
 	}
 
+	countries := map[int]string{}
 	values := make([]int, 0, len(topCountries))
-	for _, value := range topCountries {
+	for key, value := range topCountries {
 		values = append(values, value)
+		countries[value] = key
 	}
 
 	sort.Sort(sort.Reverse(sort.IntSlice(values)))
 
-	// var response map[string]int
-	
+	type data struct {
+		Country 	string `json:"country"`
+		SuperUsers 	uint64 `json:"superusers"`
+	}
+
+	values = values[:5]
+
+	response := map[int]data{}
+	for id, value := range values {
+		response[id + 1] = data{Country: countries[value], SuperUsers: uint64(value)}
+	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(&values)
+	json.NewEncoder(w).Encode(&response)
 }
 
 func GetTeamInsights(w http.ResponseWriter, r *http.Request) {
@@ -143,10 +155,10 @@ func GetTeamInsights(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type data struct {
-		Members 		int 		`json:"members"`
-		ActiveMembers	int 		`json:"active_members"`
-		Leader			string		`json:"leader"`
-		PercentActiveUsers	float64 `json:"percent_active_users"`
+		Members 			int 		`json:"members"`
+		ActiveMembers		int 		`json:"active_members"`
+		Leader				string		`json:"leader"`
+		PercentActiveUsers	float64 	`json:"percent_active_users"`
 		CompletedProjects	[]string	`json:"completed_projects"`
 	}
 
