@@ -88,6 +88,8 @@ func GetTopCountries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	countries := map[int]string{}
+	// country := map[string]int{}
+	// id := 0
 	values := make([]int, 0, len(topCountries))
 	for key, value := range topCountries {
 		values = append(values, value)
@@ -105,7 +107,10 @@ func GetTopCountries(w http.ResponseWriter, r *http.Request) {
 
 	response := map[int]data{}
 	for id, value := range values {
-		response[id + 1] = data{Country: countries[value], SuperUsers: uint64(value)}
+		response[id + 1] = data{
+			Country: countries[value],
+			SuperUsers: uint64(value),
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -178,7 +183,7 @@ func GetTeamInsights(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&response)
 }
 
-func GetLogins(w http.ResponseWriter, r *http.Request){
+func GetActiveUsersPerDay(w http.ResponseWriter, r *http.Request){
 	var users []models.Users
 
 	file, err := os.Open("users.json")

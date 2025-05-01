@@ -11,7 +11,7 @@ func main() {
 	http.HandleFunc("GET /superusers", controllers.GetSuperUsers)
 	http.HandleFunc("GET /top-countries", controllers.GetTopCountries)
 	http.HandleFunc("GET /team-insights", controllers.GetTeamInsights)
-	http.HandleFunc("GET /logs", controllers.GetLogins)
+	http.HandleFunc("GET /active-users-per-day", controllers.GetActiveUsersPerDay)
 
 	http.ListenAndServe(":3000", nil)
 }
